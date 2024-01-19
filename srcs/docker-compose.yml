@@ -1,0 +1,125 @@
+version: "3"
+
+services:
+    nginx:
+        container_name: nginx
+        build: "./requirements/nginx/"
+        depends_on:
+            - wordpress
+        ports:
+            - "443:443"
+        volumes:
+            - wordpress:/var/www/html/
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
+    wordpress:
+        container_name: wordpress
+        build: "./requirements/wordpress/"
+        depends_on:
+            - mariadb
+        volumes:
+            - wordpress:/var/www/html/
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
+    mariadb:
+        container_name: mariadb
+        build: "./requirements/mariadb/"
+        volumes:
+            - sql:/var/lib/mysql/
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
+    redis:
+        container_name: redis
+        build: "./requirements/bonus/redis/"
+        depends_on:
+            - wordpress
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
+    adminer:
+        container_name: adminer
+        build: "./requirements/bonus/adminer/"
+        depends_on:
+            - wordpress
+            - mariadb
+        ports:
+            - "8080:8080"
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
+    portainer:
+        container_name: portainer
+        build: "./requirements/bonus/portainer/"
+        ports:
+            - "9443:9443"
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+            - "portainer_data:/data"
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
+    ftp:
+        container_name: ftp
+        build: "./requirements/bonus/ftp/"
+        ports:
+            - "21:21"
+            - "21100-21110:21100-21110"
+        volumes:
+            - "wordpress:/var/www/html"
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
+    website:
+        container_name: website
+        build: "./requirements/bonus/website/"
+        ports:
+            - "3000:3000"
+        networks:
+            - inception
+        env_file:
+            - .env
+        restart: always
+volumes:
+    wordpress:
+        name: wordpress
+        driver: local
+        driver_opts:
+            device: /home/armartir/data/wp_volume/
+            o: bind
+            type: none
+    sql:
+        name: sql
+        driver: local
+        driver_opts:
+            device: /home/armartir/data/db_volume/
+            o: bind
+            type: none
+    portainer_data:
+        name: portainer
+        driver: local
+        driver_opts:
+            device: /home/armartir/data/portainer_volume/
+            o: bind
+            type: none
+
+networks:
+    inception:
+        name: inception
+        driver: "bridge"
